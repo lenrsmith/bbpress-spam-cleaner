@@ -117,7 +117,7 @@ class bbPress_Spam_Cleaner_Admin {
 	}
 
 	public function management_page_handler(){
-		if ( ! bbp_is_post_request() )
+		if ( ! bbp_is_post_request() || 'bbpress-spam-cleaner-scan' != $_REQUEST['page'])
 			return;
 
 		check_admin_referer( 'bbpress-spam-cleaner-scan' );
@@ -128,31 +128,84 @@ class bbPress_Spam_Cleaner_Admin {
 		wp_cache_flush();
 
 		// Cycle through all bbp posts and check them for spam
-/*		$is_spam = bbp_is_topic_spam( $topic_id );
-		$message = true === $is_spam ? 'unspammed' : 'spammed';
-		$success = true === $is_spam ? bbp_unspam_topic( $topic_id ) : bbp_spam_topic( $topic_id );
+		global $wpdb;
 
-		$is_spam = bbp_is_reply_spam( $reply_id );
-		$message = $is_spam ? 'unspammed' : 'spammed';
-		$success = $is_spam ? bbp_unspam_reply( $reply_id ) : bbp_spam_reply( $reply_id );
-*/
+		set_time_limit(300);
 
-		if ( bbp_has_topics() ) {
-			while( bbp_topics() ){
-				bbp_the_topic();
-				$content = bbp_get_topic_content();
+		if(isset($_REQUEST['topic'])){
+			$querystr = "
+				SELECT ID id, post_author, post_title title, post_name, post_type, post_content content 
+				FROM tsw.wp_u9r265_posts WHERE post_type='topic' AND post_status != 'spam';
+			";
 
-				$this->posts[] = array(
-					'id'			=> bbp_get_topic_id(),
-					'title' 		=> bbp_get_topic_title(),
-					'content' 		=> $content,
-					'spam_status' 	=> $this->checkSpam($content),
-				);
+			$results = $wpdb->get_results($querystr, ARRAY_A);
+
+			foreach($results as $r){
+				$content['comment_author'] = $r['post_author'];
+				$content['comment_author_email'] = '';
+				$content['comment_author_url'] = '';
+				$content['comment_content'] = $r['content'];
+
+				if(bbPress_Spam_Cleaner_Admin::checkSpam($content)){
+					bbp_spam_topic($r['id']);
+					self::spam_topic_replies($r['id']);
+				}
 			}
-		} else {
-		//	bbp_get_template_part( 'feedback', 'no-forums' );
+		}
+
+		if(isset($_REQUEST['reply'])){
+			$querystr = "
+				SELECT b.ID id, b.post_parent, b.post_author, b.post_title title, b.post_name, b.post_type, b.post_content content 
+				FROM tsw.wp_u9r265_posts AS a 
+				JOIN tsw.wp_u9r265_posts AS b 
+				ON a.id = b.post_parent 
+				WHERE b.post_type = 'reply' AND b.post_status != 'spam' ORDER BY post_parent;
+			";
+
+			$results = $wpdb->get_results($querystr, ARRAY_A);
+
+			foreach($results as $r){
+				$content['comment_author'] = $r['post_author'];
+				$content['comment_author_email'] = '';
+				$content['comment_author_url'] = '';
+				$content['comment_content'] = $r['content'];
+
+				if(bbPress_Spam_Cleaner_Admin::checkSpam($content))
+					bbp_spam_reply($r['id']);
+			}
 		}
 	}
+
+	public static function spam_topic_replies($topic_id){
+		global $wpdb;
+
+		$querystr = "
+			SELECT ID id, post_author, post_title title, post_name, post_type, post_content content 
+			FROM tsw.wp_u9r265_posts WHERE post_type='topic' AND post_status != 'spam' AND post_parent = ".$topic_id.";
+		";
+
+		$results = $wpdb->get_results($querystr, ARRAY_A);
+
+		foreach($results as $r){
+			bbp_spam_reply($r->id);
+		}
+	}
+
+	public static function unspam_topic_replies($topic_id){
+		global $wpdb;
+
+		$querystr = "
+			SELECT ID id, post_author, post_title title, post_name, post_type, post_content content 
+			FROM tsw.wp_u9r265_posts WHERE post_type='topic' AND post_status != 'spam' AND post_parent = ".$topic_id.";
+		";
+
+		$results = $wpdb->get_results($querystr, ARRAY_A);
+
+		foreach($results as $r){
+			bbp_unspam_reply($r->id);
+		}
+	}
+
 	/**
 	 * Scan the passed content for spam using the Akismet plugin and return the result.
 	 * Shamelessly lifted from Binary Moons function at http://www.binarymoon.co.uk/2010/03/akismet-plugin-theme-stop-spam-dead/
@@ -161,7 +214,7 @@ class bbPress_Spam_Cleaner_Admin {
 	 * @access   public
 	 * @return boolean 
 	 */
-	public function checkSpam ($content) {
+	public static function checkSpam ($content) {
 
 		// innocent until proven guilty
 		$isSpam = FALSE;

@@ -1,11 +1,11 @@
-#Plugin Name
-Contributors: lenrsmith
-Tags: comments, spam, bbpress
-Requires at least: 3.0.1
-Tested up to: 3.9
-Stable tag: 3.9
-License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+#bbPress Spam Cleaner
+*Contributors: lenrsmith
+*Tags: comments, spam, bbpress
+*Requires at least: 3.0.1
+*Tested up to: 3.9
+*Stable tag: 3.9
+*License: GPLv2 or later
+*License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 The bbPress Spam Cleaner helps clean up spam from existing forum posts.
 
@@ -27,7 +27,7 @@ bbPress Spam Cleaner simply scans existing posts and marks them as spam using Ak
 
 ##Changelog
 
-*0.1.1 The intial version
+* 0.1.1 The intial version
 
 
 ##Thanks

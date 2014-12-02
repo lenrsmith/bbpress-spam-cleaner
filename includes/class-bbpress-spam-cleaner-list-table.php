@@ -9,33 +9,117 @@
 
 class BBP_Spam_Cleaner_List_Table extends BBP_Spam_Cleaner_WP_List_Table {
 	function get_columns(){
-			$columns = array(
+		return array(
+			'cb'		=> '<input type="checkbox" />',
 			'id'		=> 'ID',
 			'title'		=> 'Title',
 			'content'	=> 'Content',
 			'spam'		=> 'Spam?'
-			);
-			return $columns;
-		}
+		);
+	}
+
+	function get_sortable_columns(){
+		return array(
+			'id' 		=> array('id', false),
+			'title' 	=> array('title', false),
+			'content' 	=> array('content', false),
+			'spam' 		=> array('spam', false)
+		);
+	}
 
 	function prepare_items() {
 		$columns = $this->get_columns();
 		$hidden = array();
-		$sortable = array();
+		$sortable = $this->get_sortable_columns();
 		$this->_column_headers = array($columns, $hidden, $sortable);
-		$this->items = $this->example_data;;
+		$this->process_bulk_action();
+		$this->items = $this->get_data();
+	}
+
+	function process_bulk_action(){
+		if(isset($_REQUEST['page']) && 'bbpress-spam-list-table' == $_REQUEST['page'] && isset($_REQUEST['topic']) && $this->current_action()){
+			$topics = $_REQUEST['topic'];
+
+			set_time_limit(300);
+
+			foreach($topics as $topic){
+				switch($this->current_action())
+				{
+					case 'spam':
+						bbp_spam_topic($topic);
+						bbPress_Spam_Cleaner_Admin::spam_topic_replies($topic);
+						break;
+
+					case 'unspam':
+						bbp_unspam_topic($topic);
+						bbPress_Spam_Cleaner_Admin::unspam_topic_replies($topic);
+						break;
+				}
+			}
+		}
+	}
+
+	function get_data(){
+		global $wpdb;
+
+/*
+		$is_spam = bbp_is_topic_spam( $topic_id );
+		$message = true === $is_spam ? 'unspammed' : 'spammed';
+		$success = true === $is_spam ? bbp_unspam_topic( $topic_id ) : bbp_spam_topic( $topic_id );
+
+		$is_spam = bbp_is_reply_spam( $reply_id );
+		$message = $is_spam ? 'unspammed' : 'spammed';
+		$success = $is_spam ? bbp_unspam_reply( $reply_id ) : bbp_spam_reply( $reply_id );
+*/
+/*		$querystr = "
+			SELECT b.ID id, b.post_parent, b.post_author, b.post_title title, b.post_name, b.post_type, b.post_content content 
+			FROM tsw.wp_u9r265_posts AS a 
+			JOIN tsw.wp_u9r265_posts AS b 
+			ON a.id = b.post_parent 
+			WHERE b.post_type='topic' OR b.post_type='reply' ORDER BY post_parent;
+		";
+*/
+		$querystr = "
+			SELECT ID id, post_author, post_title title, post_name, post_type, post_content content 
+			FROM tsw.wp_u9r265_posts WHERE post_type='topic';
+		";
+
+		$pageposts = $wpdb->get_results($querystr, ARRAY_A);
+
+		foreach($pageposts as &$post){
+			$post['spam'] = bbp_is_topic_spam($post['id']) ? 'YES' : 'NO';
+		}
+
+		return $pageposts;
 	}
 
 	function column_default( $item, $column_name ) {
 		switch( $column_name ) { 
 			case 'id':
 			case 'title':
+				return '<a href="/forums/topic/'.$item[ 'post_name' ].'">'.$item[ $column_name ].'</a>';
+
 			case 'content':
 			case 'spam':
 			  return $item[ $column_name ];
 			default:
 			  return print_r( $item, true ) ; //Show the whole array for troubleshooting purposes
 		}
+	}
+
+	function column_cb($item){
+		return sprintf(
+			'<input type="checkbox" name="topic[]" value="%s" />', $item['id']
+		);
+	}
+
+	function get_bulk_actions(){
+		$actions = array(
+			'spam' 		=> 'Mark as spam',
+			'unspam' 	=> 'Unmark as spam'
+		);
+
+		return $actions;
 	}
 }
 
