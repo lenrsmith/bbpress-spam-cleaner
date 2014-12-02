@@ -73,15 +73,15 @@ class BBP_Spam_Cleaner_List_Table extends BBP_Spam_Cleaner_WP_List_Table {
 */
 /*		$querystr = "
 			SELECT b.ID id, b.post_parent, b.post_author, b.post_title title, b.post_name, b.post_type, b.post_content content 
-			FROM tsw.wp_u9r265_posts AS a 
-			JOIN tsw.wp_u9r265_posts AS b 
+			FROM wp_u9r265_posts AS a 
+			JOIN wp_u9r265_posts AS b 
 			ON a.id = b.post_parent 
 			WHERE b.post_type='topic' OR b.post_type='reply' ORDER BY post_parent;
 		";
 */
 		$querystr = "
 			SELECT ID id, post_author, post_title title, post_name, post_type, post_content content 
-			FROM tsw.wp_u9r265_posts WHERE post_type='topic';
+			FROM wp_u9r265_posts WHERE post_type='topic';
 		";
 
 		$pageposts = $wpdb->get_results($querystr, ARRAY_A);

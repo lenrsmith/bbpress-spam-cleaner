@@ -135,7 +135,7 @@ class bbPress_Spam_Cleaner_Admin {
 		if(isset($_REQUEST['topic'])){
 			$querystr = "
 				SELECT ID id, post_author, post_title title, post_name, post_type, post_content content 
-				FROM tsw.wp_u9r265_posts WHERE post_type='topic' AND post_status != 'spam';
+				FROM wp_u9r265_posts WHERE post_type='topic' AND post_status != 'spam';
 			";
 
 			$results = $wpdb->get_results($querystr, ARRAY_A);
@@ -156,8 +156,8 @@ class bbPress_Spam_Cleaner_Admin {
 		if(isset($_REQUEST['reply'])){
 			$querystr = "
 				SELECT b.ID id, b.post_parent, b.post_author, b.post_title title, b.post_name, b.post_type, b.post_content content 
-				FROM tsw.wp_u9r265_posts AS a 
-				JOIN tsw.wp_u9r265_posts AS b 
+				FROM wp_u9r265_posts AS a 
+				JOIN wp_u9r265_posts AS b 
 				ON a.id = b.post_parent 
 				WHERE b.post_type = 'reply' AND b.post_status != 'spam' ORDER BY post_parent;
 			";
@@ -181,7 +181,7 @@ class bbPress_Spam_Cleaner_Admin {
 
 		$querystr = "
 			SELECT ID id, post_author, post_title title, post_name, post_type, post_content content 
-			FROM tsw.wp_u9r265_posts WHERE post_type='topic' AND post_status != 'spam' AND post_parent = ".$topic_id.";
+			FROM wp_u9r265_posts WHERE post_type='topic' AND post_status != 'spam' AND post_parent = ".$topic_id.";
 		";
 
 		$results = $wpdb->get_results($querystr, ARRAY_A);
@@ -196,7 +196,7 @@ class bbPress_Spam_Cleaner_Admin {
 
 		$querystr = "
 			SELECT ID id, post_author, post_title title, post_name, post_type, post_content content 
-			FROM tsw.wp_u9r265_posts WHERE post_type='topic' AND post_status != 'spam' AND post_parent = ".$topic_id.";
+			FROM wp_u9r265_posts WHERE post_type='topic' AND post_status != 'spam' AND post_parent = ".$topic_id.";
 		";
 
 		$results = $wpdb->get_results($querystr, ARRAY_A);
